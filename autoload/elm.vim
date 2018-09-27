@@ -40,7 +40,8 @@ endf
 " Vim command to format Elm files with elm-format
 function! elm#Format() abort
 	" check for elm-format
-	if elm#util#CheckBin('elm-format', 'https://github.com/avh4/elm-format') ==# ''
+  let l:binpath = elm#util#FindElmFormat()
+	if l:binpath ==# ''
 		return
 	endif
 
@@ -61,7 +62,7 @@ function! elm#Format() abort
 	call writefile(getline(1, '$'), l:tmpname)
 
 	" call elm-format on the temporary file
-	let l:out = system('elm-format ' . l:tmpname . ' --output ' . l:tmpname)
+	let l:out = system(l:binpath . ' ' . l:tmpname . ' --output ' . l:tmpname)
 
 	" if there is no error
 	if v:shell_error == 0
@@ -92,7 +93,8 @@ endf
 " Query elm-oracle and echo the type and docs for the word under the cursor.
 function! elm#ShowDocs() abort
 	" check for the elm-oracle binary
-	if elm#util#CheckBin('elm-oracle', 'https://github.com/elmcast/elm-oracle') ==# ''
+  let l:binpath = elm#util#FindElmOracle()
+	if l:binpath ==# ''
 		return
 	endif
 
@@ -127,7 +129,10 @@ endf
 function! elm#Syntastic(input) abort
 	let l:fixes = []
 
-	let l:bin = 'elm-make'
+	let l:bin = elm#util#FindElm()
+  if l:bin ==# ''
+    return
+  endif
 	let l:format = '--report=json'
 	let l:input = shellescape(a:input)
 	let l:output = '--output=' . shellescape(syntastic#util#DevNull())
@@ -162,7 +167,10 @@ function! elm#Build(input, output, show_warnings) abort
 	let l:fixes = []
 	let l:rawlines = []
 
-	let l:bin = 'elm-make'
+	let l:bin = elm#util#FindElm()
+  if l:bin ==# ''
+    return
+  endif
 	let l:format = '--report=json'
 	let l:input = shellescape(a:input)
 	let l:output = '--output=' . shellescape(a:output)
@@ -212,11 +220,7 @@ endf
 
 " Make the given file, or the current file if none is given.
 function! elm#Make(...) abort
-	if elm#util#CheckBin('elm-make', 'http://elm-lang.org/install') ==# ''
-		return
-	endif
-
-	call elm#util#Echo('elm-make:', 'building...')
+	call elm#util#Echo('elm make:', 'building...')
 
 	let l:input = (a:0 == 0) ? expand('%:p') : a:1
 	let l:fixes = elm#Build(l:input, g:elm_make_output_file, g:elm_make_show_warnings)
@@ -256,23 +260,25 @@ endf
 
 " Open the elm repl in a subprocess.
 function! elm#Repl() abort
-	" check for the elm-repl binary
-	if elm#util#CheckBin('elm-repl', 'http://elm-lang.org/install') ==# ''
+	" check for the elm
+  let l:elmpath = elm#util#FindElm()
+	if l:elmpath ==# ''
 		return
 	endif
 
+  let l:repl = l:elmpath . ' repl'
+
 	if has('nvim')
-		term('elm-repl')
+    call elm#util#ExecuteViaTerm(l:repl)
 	else
-		!elm-repl
+    execute(l:repl)
 	endif
 endf
 
-function! elm#Oracle(filepath, word) abort
-	let l:bin = 'elm-oracle'
+function! elm#Oracle(bin, filepath, word) abort
 	let l:filepath = shellescape(a:filepath)
 	let l:word = shellescape(a:word)
-	let l:command = l:bin . ' ' . l:filepath . ' ' . l:word
+	let l:command = a:bin . ' ' . l:filepath . ' ' . l:word
 	return s:ExecuteInRoot(l:command)
 endfunction
 
@@ -327,16 +333,17 @@ endf
 " Otherwise run elm-test in the root of your project which deafults to
 " running 'elm-test tests/TestRunner'.
 function! elm#Test() abort
-	if elm#util#CheckBin('elm-test', 'https://github.com/rtfeldman/node-elm-test') ==# ''
+  let l:binpath = elm#util#FindElmTest()
+	if l:binpath ==# ''
 		return
 	endif
 
 	if match(getline(1, '$'), 'consoleRunner') < 0
-		let l:out = s:ExecuteInRoot('elm-test')
+		let l:out = s:ExecuteInRoot(l:binpath)
 		call elm#util#EchoSuccess('elm-test', l:out)
 	else
 		let l:filepath = shellescape(expand('%:p'))
-		let l:out = s:ExecuteInRoot('elm-test ' . l:filepath)
+		let l:out = s:ExecuteInRoot(l:binpath . ' ' . l:filepath)
 		call elm#util#EchoSuccess('elm-test', l:out)
 	endif
 endf
@@ -347,7 +354,7 @@ function! elm#FindRootDirectory() abort
 	if empty(l:elm_root)
 		let l:current_file = expand('%:p')
 		let l:dir_current_file = fnameescape(fnamemodify(l:current_file, ':h'))
-		let l:match = findfile('elm-package.json', l:dir_current_file . ';')
+		let l:match = findfile('elm.json', l:dir_current_file . ';')
 		if empty(l:match)
 			let l:elm_root = ''
 		else
