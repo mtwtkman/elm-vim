@@ -27,7 +27,7 @@ fun! elm#util#FindElmOracle() abort
 endfun
 
 fun! elm#util#FindElmTest() abort
-  return elm#util#FindExecutable('elm-test', 'https://github.com/rtfeldman/node-elm-aaatest')
+  return elm#util#FindExecutable('elm-test', 'https://github.com/elm-explorations/test')
 endfun
 
 fun! elm#util#FindExecutable(name, url) abort
