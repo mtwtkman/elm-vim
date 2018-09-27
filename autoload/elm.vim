@@ -92,7 +92,6 @@ endf
 
 " Query elm-oracle and echo the type and docs for the word under the cursor.
 function! elm#ShowDocs() abort
-	" check for the elm-oracle binary
   let l:binpath = elm#util#FindElmOracle()
 	if l:binpath ==# ''
 		return
@@ -174,7 +173,7 @@ function! elm#Build(input, output, show_warnings) abort
 	let l:format = '--report=json'
 	let l:input = shellescape(a:input)
 	let l:output = '--output=' . shellescape(a:output)
-	let l:command = l:bin . ' ' . l:format  . ' ' . l:input . ' ' . l:output
+	let l:command = l:bin . ' make ' . l:format  . ' ' . l:input . ' ' . l:output
 	let l:reports = s:ExecuteInRoot(l:command)
 
 	for l:report in split(l:reports, '\n')
@@ -275,10 +274,14 @@ function! elm#Repl() abort
 	endif
 endf
 
-function! elm#Oracle(bin, filepath, word) abort
+function! elm#Oracle(filepath, word) abort
+  let l:binpath = elm#util#FindElmOracle()
+  if l:binpath ==# ''
+    return
+  end
 	let l:filepath = shellescape(a:filepath)
 	let l:word = shellescape(a:word)
-	let l:command = a:bin . ' ' . l:filepath . ' ' . l:word
+	let l:command = l:binpath . ' ' . l:filepath . ' ' . l:word
 	return s:ExecuteInRoot(l:command)
 endfunction
 
