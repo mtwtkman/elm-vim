@@ -61,8 +61,14 @@ function! elm#Format() abort
 	let l:tmpname = tempname() . '.elm'
 	call writefile(getline(1, '$'), l:tmpname)
 
+  let l:version_option = ''
+  if exists('g:elm_version')
+    unlet l:version_option
+    let l:version_option = ' --elm-version='. string(g:elm_version)
+  endif
+
 	" call elm-format on the temporary file
-	let l:out = system(l:binpath . ' ' . l:tmpname . ' --output ' . l:tmpname)
+	let l:out = system(l:binpath . ' ' . l:tmpname . l:version_option . ' --output ' . l:tmpname)
 
 	" if there is no error
 	if v:shell_error == 0
