@@ -10,15 +10,45 @@ fun! elm#util#IsWin() abort
   return 0
 endf
 
+fun! elm#util#ExecuteViaTerm(command)
+  execute 'term' a:command
+endfun
+
+fun! elm#util#FindElm() abort
+  return elm#util#FindExecutable('elm', 'http://elm-lang.org/install')
+endfun
+
+fun! elm#util#FindElmFormat() abort
+  return elm#util#FindExecutable('elm-format', 'https://github.com/avh4/elm-format')
+endfun
+
+fun! elm#util#FindElmOracle() abort
+  return elm#util#FindExecutable('elm-oracle', 'https://github.com/elmcast/elm-oracle')
+endfun
+
+fun! elm#util#FindElmTest() abort
+  return elm#util#FindExecutable('elm-test', 'https://github.com/rtfeldman/node-elm-aaatest')
+endfun
+
+fun! elm#util#FindExecutable(name, url) abort
+  if elm#util#CheckBin(a:name, a:url) !=# ''
+    return a:name
+  endif
+  let l:path = elm#FindRootDirectory() . '/node_modules/.bin/' . a:name
+  if elm#util#CheckBin(l:path, a:url) !=# ''
+    return l:path
+  endif
+
+  call elm#util#EchoWarning('elm-vim:', 'could not find ' . l:path . ' [' . a:url . ']')
+  return
+endfun
+
 fun! elm#util#CheckBin(bin, url) abort
   let l:binpath = substitute(a:bin, '^\s*\(.\{-}\)\s*$', '\1', '')
 
   if executable(l:binpath)
     return l:binpath
   endif
-
-  call elm#util#EchoWarning('elm-vim:', 'could not find ' . l:binpath . ' [' . a:url . ']')
-
   return ''
 endf
 
