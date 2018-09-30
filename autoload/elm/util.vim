@@ -11,7 +11,7 @@ fun! elm#util#IsWin() abort
 endf
 
 fun! elm#util#ExecuteViaTerm(command)
-  execute 'term' a:command
+  execute 'split' 'term://' . a:command
 endfun
 
 fun! elm#util#FindElm() abort
